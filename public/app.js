@@ -25,11 +25,14 @@ let currentTrackId = null;
 let playerInitialized = false;
 let currentSongStartTime = null; // Track when current song started
 let pendingTrackSwitch = null; // Store next track to switch to
+let requiresUserInteraction = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent); // Mobile detection
+let hasUserInteracted = false;
 
 // Login button click
 if (loginBtn) {
   loginBtn.addEventListener('click', () => {
     console.log('🎵 Start Listening button clicked!');
+    hasUserInteracted = true; // Mark that user has interacted
     try {
       showDemoPlayer();
     } catch (error) {
@@ -115,6 +118,7 @@ window.onYouTubeIframeAPIReady = function() {
         'rel': 0,
         'fs': 1,
         'enablejsapi': 1,
+        'playsinline': 1, // Required for iOS inline playback
         'origin': window.location.origin
       },
       events: {
@@ -307,7 +311,12 @@ async function searchAndPlayYouTube(songName, artistName, startSeconds = 0) {
             setTimeout(() => {
               if (youtubePlayer.playVideo) {
                 console.log('▶️ Playing video...');
-                youtubePlayer.playVideo();
+                youtubePlayer.playVideo().catch(err => {
+                  if (requiresUserInteraction && !hasUserInteracted) {
+                    console.log('⚠️ Mobile browser requires user interaction to play');
+                    showMobileTapToPlay();
+                  }
+                });
               }
             }, 1500);
           }
@@ -477,6 +486,62 @@ function switchToTrack(trackInfo) {
   });
   
   searchAndPlayYouTube(trackInfo.name, trackInfo.artist, 0);
+}
+
+// Show mobile tap-to-play overlay
+function showMobileTapToPlay() {
+  // Check if overlay already exists
+  if (document.getElementById('mobile-play-overlay')) return;
+  
+  const overlay = document.createElement('div');
+  overlay.id = 'mobile-play-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 14, 39, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    backdrop-filter: blur(10px);
+  `;
+  
+  const button = document.createElement('button');
+  button.innerHTML = `
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M8 5v14l11-7z"/>
+    </svg>
+    <div style="margin-top: 16px; font-size: 18px; font-weight: 600;">TAP TO PLAY</div>
+  `;
+  button.style.cssText = `
+    background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+    border: none;
+    color: white;
+    padding: 32px 48px;
+    border-radius: 24px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'Poppins', sans-serif;
+    box-shadow: 0 8px 32px rgba(0, 212, 255, 0.3);
+  `;
+  
+  button.onclick = () => {
+    hasUserInteracted = true;
+    if (youtubePlayer && youtubePlayer.playVideo) {
+      youtubePlayer.playVideo();
+    }
+    overlay.remove();
+  };
+  
+  overlay.appendChild(button);
+  document.body.appendChild(overlay);
 }
 
 // Socket events
