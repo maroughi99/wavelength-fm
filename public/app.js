@@ -30,32 +30,11 @@ let hasUserInteracted = false;
 
 // Login button click
 if (loginBtn) {
-  loginBtn.addEventListener('click', async () => {
+  loginBtn.addEventListener('click', () => {
     console.log('🎵 Start Listening button clicked!');
     hasUserInteracted = true;
-    
     try {
       showDemoPlayer();
-      
-      // For mobile: Load a video immediately to capture user gesture
-      if (requiresUserInteraction && !youtubePlayer) {
-        console.log('📱 Mobile: Waiting for YouTube player to initialize...');
-        // YouTube player will be ready soon via onPlayerReady
-      } else if (requiresUserInteraction && youtubePlayer) {
-        // Player already exists, load a short video to establish playback permission
-        console.log('📱 Mobile: Establishing playback permission...');
-        youtubePlayer.mute();
-        youtubePlayer.loadVideoById('jNQXAC9IVRw'); // "Me at the Zoo" - 18 seconds
-        try {
-          await youtubePlayer.playVideo();
-          console.log('✅ Mobile: Playback permission established');
-          youtubePlayer.unMute();
-          // Now fetch the actual song
-          setTimeout(() => fetchNowPlaying(), 500);
-        } catch (e) {
-          console.log('⚠️ Mobile: Still blocked, will retry');
-        }
-      }
     } catch (error) {
       console.error('Error showing player:', error);
       alert('Error loading player. Check console for details.');
@@ -160,22 +139,8 @@ function onPlayerReady(event) {
   console.log('✅ YouTube player ready and functional!');
   updatePlayerStatus('Ready - Fetching song...');
   
-  // If on mobile and user already clicked start listening, establish playback permission now
-  if (requiresUserInteraction && hasUserInteracted && !playerSection.classList.contains('hidden')) {
-    console.log('📱 Mobile: User already started listening, establishing playback...');
-    youtubePlayer.mute();
-    youtubePlayer.loadVideoById('jNQXAC9IVRw');
-    youtubePlayer.playVideo().then(() => {
-      console.log('✅ Mobile: Playback permission established');
-      youtubePlayer.unMute();
-      setTimeout(() => fetchNowPlaying(), 500);
-    }).catch(e => {
-      console.log('⚠️ Still blocked:', e);
-      youtubePlayer.unMute();
-      fetchNowPlaying();
-    });
-  } else if (!playerSection.classList.contains('hidden')) {
-    // Desktop or already playing
+  // Immediately check for current song and play it
+  if (!playerSection.classList.contains('hidden')) {
     console.log('Player ready and user is listening - fetching track immediately');
     syncWithRadioState();
     setTimeout(() => {
