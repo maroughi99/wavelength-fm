@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wavelength FM - 24/7 Radio</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script>
+    // Load API keys from server
+    window.LASTFM_API_KEY = 'b25b959554ed76058ac220b7b2e0a026';
+    window.YOUTUBE_API_KEY = 'AIzaSyA_SPigBXGsaKBdLvAQz1usd35_Bi-cPDQ';
+  </script>
+</head>
+<body>
+  <div class="background-gradient"></div>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="45" stroke="url(#gradient)" stroke-width="3"/>
+            <path d="M30 50 Q 40 30, 50 50 T 70 50" stroke="url(#gradient)" stroke-width="3" fill="none"/>
+            <circle cx="30" cy="50" r="3" fill="url(#gradient)"/>
+            <circle cx="50" cy="50" r="3" fill="url(#gradient)"/>
+            <circle cx="70" cy="50" r="3" fill="url(#gradient)"/>
+            <defs>
+              <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#7b2ff7;stop-opacity:1" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <h1>WAVELENGTH<span class="fm">FM</span></h1>
+          <p class="tagline">24/7 SYNCHRONIZED RADIO</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Login Section -->
+    <div id="login-section" class="section">
+      <div class="welcome-card">
+        <div class="channel-badge">
+          <span class="channel-number">CH 001</span>
+          <span class="channel-dot">•</span>
+          <span class="channel-genre">ALL GENRES</span>
+        </div>
+        <h2 class="welcome-title">Ready to Tune In?</h2>
+        <p class="welcome-text">Connect your music account and join thousands of listeners experiencing synchronized radio</p>
+        <button id="login-btn" class="btn-primary pulse-animation">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M5 3l14 9-14 9V3z"/>
+          </svg>
+          CLICK TO START LISTENING
+        </button>
+        <p class="click-hint">👆 Click the button above to get started</p>
+        <div class="features">
+          <div class="feature">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            <span>100% Free</span>
+          </div>
+          <div class="feature">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            <span>Ad-Free Listening</span>
+          </div>
+          <div class="feature">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+            <span>Synced Experience</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Player Section -->
+    <div id="player-section" class="section hidden">
+      <!-- Top Bar -->
+      <div class="top-bar">
+        <div class="channel-info">
+          <div class="channel-pill">
+            <span class="live-indicator"></span>
+            <span class="channel-label">LIVE</span>
+            <span class="channel-divider">|</span>
+            <span class="channel-id">CH 001</span>
+          </div>
+        </div>
+        <div id="listener-info" class="user-badge">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          <span id="username">Listener</span>
+        </div>
+      </div>
+
+      <!-- Album Art & Visualizer -->
+      <div class="album-art-container">
+        <div class="album-frame">
+          <img id="album-art" src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=600&h=600&fit=crop" alt="Album Art" onerror="this.src='https://via.placeholder.com/600/1a1f3a/00d4ff?text=♪'">
+          <div class="album-overlay"></div>
+          <div class="floating-wave">
+            <svg viewBox="0 0 100 20" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0 10 Q 25 5, 50 10 T 100 10" stroke="url(#waveGradient)" stroke-width="2" fill="none" opacity="0.6"/>
+              <defs>
+                <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:1" />
+                  <stop offset="100%" style="stop-color:#7b2ff7;stop-opacity:1" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+        </div>
+        <div class="visualizer">
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+        </div>
+      </div>
+
+      <!-- Now Playing Card -->
+      <div class="now-playing-card">
+        <div class="now-playing-header">
+          <span class="now-playing-label">NOW PLAYING</span>
+        </div>
+        <div class="track-info">
+          <h2 id="track-name">No track playing</h2>
+          <p id="track-artist">Connect to start listening</p>
+          <p id="track-album" class="track-album"></p>
+        </div>
+      </div>
+
+      <!-- YouTube Player (Hidden) -->
+      <div style="display: none;">
+        <div id="youtube-player"></div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <div class="footer-content">
+        <p class="powered-by">Powered by <strong>Wavelength FM</strong></p>
+        <p class="disclaimer">Free for all listeners • Synchronized streaming experience</p>
+      </div>
+    </footer>
+  </div>
+
+  <script src="app.js?v=2"></script>
+</body>
+</html>
