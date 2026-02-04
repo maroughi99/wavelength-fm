@@ -30,9 +30,21 @@ let hasUserInteracted = false;
 
 // Login button click
 if (loginBtn) {
-  loginBtn.addEventListener('click', () => {
+  loginBtn.addEventListener('click', async () => {
     console.log('🎵 Start Listening button clicked!');
     hasUserInteracted = true; // Mark that user has interacted
+    
+    // On mobile, we need to start playback in the same gesture context
+    if (requiresUserInteraction && youtubePlayer && youtubePlayer.playVideo) {
+      console.log('📱 Mobile detected - preparing playback context');
+      // Try to play (even if no video loaded yet) to establish playback permission
+      try {
+        await youtubePlayer.playVideo();
+      } catch (e) {
+        console.log('Playback will start when video loads');
+      }
+    }
+    
     try {
       showDemoPlayer();
     } catch (error) {
@@ -311,11 +323,10 @@ async function searchAndPlayYouTube(songName, artistName, startSeconds = 0) {
             setTimeout(() => {
               if (youtubePlayer.playVideo) {
                 console.log('▶️ Playing video...');
-                youtubePlayer.playVideo().catch(err => {
-                  if (requiresUserInteraction && !hasUserInteracted) {
-                    console.log('⚠️ Mobile browser requires user interaction to play');
-                    showMobileTapToPlay();
-                  }
+                youtubePlayer.playVideo().then(() => {
+                  console.log('✅ Playback started successfully');
+                }).catch(err => {
+                  console.log('⚠️ Autoplay blocked, will try on next user interaction');
                 });
               }
             }, 1500);
@@ -572,3 +583,16 @@ socket.on('radio-update', (radioState) => {
     searchAndPlayYouTube(radioState.currentSong.name, radioState.currentSong.artist, position);
   }
 });
+
+// Register Service Worker for PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then((registration) => {
+        console.log('✅ PWA: Service Worker registered', registration.scope);
+      })
+      .catch((error) => {
+        console.log('❌ PWA: Service Worker registration failed', error);
+      });
+  });
+}
