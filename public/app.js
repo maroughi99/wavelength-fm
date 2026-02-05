@@ -14,7 +14,6 @@ const trackArtist = document.getElementById('track-artist');
 const trackAlbum = document.getElementById('track-album');
 const connectionStatus = document.getElementById('connection-status');
 const usernameEl = document.getElementById('username');
-const mobilePlayBtn = document.getElementById('mobile-play-btn');
 
 // Last.fm Integration - Auto-connect
 let LASTFM_API_KEY;
@@ -67,11 +66,6 @@ if (loginBtn) {
       }).catch(e => {
         console.log('⚠️ Audio unlock failed:', e);
       });
-      
-      // Show mobile play button
-      if (mobilePlayBtn) {
-        mobilePlayBtn.style.display = 'flex';
-      }
     }
     
     try {
@@ -85,15 +79,21 @@ if (loginBtn) {
   console.error('Login button not found!');
 }
 
-// Mobile play button click
-if (mobilePlayBtn) {
-  mobilePlayBtn.addEventListener('click', () => {
-    console.log('📱 Mobile play button clicked');
-    if (youtubePlayer && youtubePlayer.playVideo) {
-      youtubePlayer.playVideo();
-      mobilePlayBtn.style.display = 'none';
+// Make album art clickable on mobile to start playback
+if (albumArt) {
+  albumArt.addEventListener('click', () => {
+    if (requiresUserInteraction && youtubePlayer) {
+      console.log('📱 Album art tapped - attempting to play');
+      if (youtubePlayer.playVideo) {
+        youtubePlayer.playVideo();
+      }
     }
   });
+  
+  // Add pointer cursor on mobile
+  if (requiresUserInteraction) {
+    albumArt.style.cursor = 'pointer';
+  }
 }
 
 // Show player
@@ -513,6 +513,30 @@ async function fetchNowPlaying() {
           if (trackAlbum) trackAlbum.textContent = track.album['#text'] || 'Album';
           if (albumArt && albumArtUrl) albumArt.src = albumArtUrl;
           
+          // Update Media Session API for lock screen controls
+          if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+              title: track.name,
+              artist: track.artist['#text'] || track.artist,
+              album: track.album['#text'] || 'Album',
+              artwork: albumArtUrl ? [
+                { src: albumArtUrl, sizes: '512x512', type: 'image/jpeg' }
+              ] : []
+            });
+            
+            navigator.mediaSession.setActionHandler('play', () => {
+              if (youtubePlayer && youtubePlayer.playVideo) {
+                youtubePlayer.playVideo();
+              }
+            });
+            
+            navigator.mediaSession.setActionHandler('pause', () => {
+              if (youtubePlayer && youtubePlayer.pauseVideo) {
+                youtubePlayer.pauseVideo();
+              }
+            });
+          }
+          
           fetch('/api/update-radio', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -558,6 +582,18 @@ function switchToTrack(trackInfo) {
   if (trackArtist) trackArtist.textContent = trackInfo.artist;
   if (trackAlbum) trackAlbum.textContent = trackInfo.album || 'Album';
   if (trackInfo.albumArt && albumArt) albumArt.src = trackInfo.albumArt;
+  
+  // Update Media Session API
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: trackInfo.name,
+      artist: trackInfo.artist,
+      album: trackInfo.album || 'Album',
+      artwork: trackInfo.albumArt ? [
+        { src: trackInfo.albumArt, sizes: '512x512', type: 'image/jpeg' }
+      ] : []
+    });
+  }
   
   fetch('/api/update-radio', {
     method: 'POST',
