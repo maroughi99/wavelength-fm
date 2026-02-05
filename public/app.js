@@ -385,16 +385,14 @@ async function searchAndPlayYouTube(songName, artistName, startSeconds = 0) {
             setTimeout(() => {
               if (youtubePlayer.playVideo) {
                 console.log('▶️ Playing video...');
-                const playPromise = youtubePlayer.playVideo();
-                if (playPromise && playPromise.then) {
-                  playPromise.then(() => {
-                    console.log('✅ Playback started successfully');
-                  }).catch(err => {
-                    console.log('⚠️ Autoplay blocked:', err);
-                    if (requiresUserInteraction) {
-                      showMobileTapToPlay();
-                    }
-                  });
+                try {
+                  youtubePlayer.playVideo();
+                  console.log('✅ Playback command sent');
+                } catch (err) {
+                  console.log('⚠️ Autoplay blocked:', err);
+                  if (requiresUserInteraction) {
+                    showMobileTapToPlay();
+                  }
                 }
               }
             }, 1500);
