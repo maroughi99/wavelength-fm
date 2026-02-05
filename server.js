@@ -49,6 +49,7 @@ const djSpotifyApi = new SpotifyWebApi({
 let listeners = new Map();
 let currentTrack = null;
 let djAuthenticated = false;
+let listenerCount = 0;
 
 // Global radio state - synced across all listeners
 let radioState = {
@@ -240,9 +241,19 @@ app.get('/api/dj-status', (req, res) => {
   res.json({ authenticated: djAuthenticated });
 });
 
+// Listener count
+app.get('/api/listener-count', (req, res) => {
+  res.json({ count: listenerCount });
+});
+
 // Socket.io connection
 io.on('connection', (socket) => {
   console.log('New listener connected:', socket.id);
+  
+  // Increment listener count and broadcast
+  listenerCount++;
+  io.emit('listener-count', { count: listenerCount });
+  console.log('👥 Listeners online:', listenerCount);
   
   // Send current track immediately
   if (currentTrack) {
@@ -286,6 +297,11 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('Listener disconnected:', socket.id);
     listeners.delete(socket.id);
+    
+    // Decrement listener count and broadcast
+    listenerCount--;
+    io.emit('listener-count', { count: listenerCount });
+    console.log('👥 Listeners online:', listenerCount);
   });
 });
 

@@ -296,6 +296,11 @@ header {
   color: var(--accent-blue);
 }
 
+.listener-count {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
 .user-badge {
   display: flex;
   align-items: center;

@@ -3,6 +3,7 @@ const socket = io();
 
 // State
 let currentPlayback = null;
+let listenerCount = 0;
 
 // DOM Elements
 const loginSection = document.getElementById('login-section');
@@ -14,6 +15,7 @@ const trackArtist = document.getElementById('track-artist');
 const trackAlbum = document.getElementById('track-album');
 const connectionStatus = document.getElementById('connection-status');
 const usernameEl = document.getElementById('username');
+const listenerCountEl = document.getElementById('listener-count');
 
 // Last.fm Integration - Auto-connect
 let LASTFM_API_KEY;
@@ -90,11 +92,16 @@ if (albumArt) {
         audioUnlocked = true; // Mark audio as unlocked
         console.log('✅ Audio unlocked - future songs will auto-play');
       }
-    } else if (youtubePlayer && youtubePlayer.getPlayerState && youtubePlayer.getPlayerState() !== 1) {
-      // Fallback: if audio stopped for some reason, allow re-tap
-      console.log('📱 Album art tapped - restarting playback');
-      if (youtubePlayer.playVideo) {
-        youtubePlayer.playVideo();
+    } else if (youtubePlayer && youtubePlayer.getPlayerState) {
+      const state = youtubePlayer.getPlayerState();
+      // Only allow tap to resume if paused (2) or stopped, not if playing (1) or buffering (3)
+      if (state === 2 || state === 0 || state === -1 || state === 5) {
+        console.log('📱 Album art tapped - resuming playback from pause/stop');
+        if (youtubePlayer.playVideo) {
+          youtubePlayer.playVideo();
+        }
+      } else {
+        console.log('📱 Song is already playing/buffering, ignoring tap');
       }
     }
   });
@@ -509,14 +516,28 @@ async function fetchNowPlaying() {
       const isInitialLoad = !currentTrackId;
       
       if ((isPlaying || isInitialLoad) && trackId !== currentTrackId) {
-        // Check if we should switch immediately (initial load or nothing playing) or queue it
+        // Check if we should switch immediately or queue it
         const isPlayerPlaying = youtubePlayer && 
                                youtubePlayer.getPlayerState && 
                                youtubePlayer.getPlayerState() === 1;
         
-        if (isInitialLoad || !isPlayerPlaying) {
-          // Initial load or current song not playing - switch immediately
-          console.log(isInitialLoad ? 'Initial load - starting track:' : 'No song playing - switching to:', track.name);
+        // Calculate how long current song has been playing
+        const songPlayTime = currentSongStartTime ? (Date.now() - currentSongStartTime) / 1000 : 0;
+        const MIN_PLAY_TIME = 30; // Don't interrupt songs that have been playing for less than 30 seconds
+        
+        // Only switch immediately if:
+        // 1. Initial load (no current song)
+        // 2. Current song has played for at least 30 seconds AND player is not actively playing
+        // 3. Current song has played for more than 2.5 minutes (likely finished or stuck)
+        const shouldSwitchImmediately = isInitialLoad || 
+                                       (songPlayTime > MIN_PLAY_TIME && !isPlayerPlaying) ||
+                                       songPlayTime > 150;
+        
+        if (shouldSwitchImmediately) {
+          const reason = isInitialLoad ? 'Initial load' : 
+                        songPlayTime > 150 ? 'Song played long enough' :
+                        'No song playing';
+          console.log(`${reason} - switching to:`, track.name);
           currentTrackId = trackId;
           currentSongStartTime = Date.now();
           pendingTrackSwitch = null;
@@ -708,6 +729,18 @@ socket.on('radio-update', (radioState) => {
     searchAndPlayYouTube(radioState.currentSong.name, radioState.currentSong.artist, position);
   }
 });
+
+socket.on('listener-count', (data) => {
+  listenerCount = data.count;
+  updateListenerCount();
+});
+
+function updateListenerCount() {
+  if (listenerCountEl) {
+    const text = listenerCount === 1 ? '1 listening' : `${listenerCount} listening`;
+    listenerCountEl.textContent = text;
+  }
+}
 
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
