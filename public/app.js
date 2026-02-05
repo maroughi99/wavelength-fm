@@ -16,8 +16,8 @@ const connectionStatus = document.getElementById('connection-status');
 const usernameEl = document.getElementById('username');
 
 // Last.fm Integration - Auto-connect
-const LASTFM_API_KEY = window.LASTFM_API_KEY;
-const YOUTUBE_API_KEY = window.YOUTUBE_API_KEY;
+let LASTFM_API_KEY;
+let YOUTUBE_API_KEY;
 const lastfmUsername = 'maroughi99';
 let updateInterval;
 let youtubePlayer;
@@ -28,6 +28,16 @@ let pendingTrackSwitch = null; // Store next track to switch to
 let requiresUserInteraction = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent); // Mobile detection
 let hasUserInteracted = false;
 let videoCache = {}; // Cache YouTube video IDs to save API quota
+
+// Fetch API keys from server
+fetch('/api/config')
+  .then(res => res.json())
+  .then(config => {
+    LASTFM_API_KEY = config.lastfmApiKey;
+    YOUTUBE_API_KEY = config.youtubeApiKey;
+    console.log('✅ API keys loaded from server');
+  })
+  .catch(err => console.error('❌ Failed to load API keys:', err));
 
 // Login button click
 if (loginBtn) {
