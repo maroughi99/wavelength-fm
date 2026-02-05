@@ -857,3 +857,33 @@ footer {
     font-size: 1em;
   }
 }
+
+/* Mobile Play Button */
+.mobile-play-button {
+  margin-top: 24px;
+  background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+  border: none;
+  color: white;
+  padding: 16px 32px;
+  border-radius: 50px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Poppins', sans-serif;
+  box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+  width: 100%;
+  justify-content: center;
+}
+
+.mobile-play-button:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 10px rgba(0, 212, 255, 0.4);
+}
+
+.mobile-play-button svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}

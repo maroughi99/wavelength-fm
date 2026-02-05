@@ -14,6 +14,7 @@ const trackArtist = document.getElementById('track-artist');
 const trackAlbum = document.getElementById('track-album');
 const connectionStatus = document.getElementById('connection-status');
 const usernameEl = document.getElementById('username');
+const mobilePlayBtn = document.getElementById('mobile-play-btn');
 
 // Last.fm Integration - Auto-connect
 let LASTFM_API_KEY;
@@ -66,6 +67,11 @@ if (loginBtn) {
       }).catch(e => {
         console.log('⚠️ Audio unlock failed:', e);
       });
+      
+      // Show mobile play button
+      if (mobilePlayBtn) {
+        mobilePlayBtn.style.display = 'flex';
+      }
     }
     
     try {
@@ -77,6 +83,17 @@ if (loginBtn) {
   });
 } else {
   console.error('Login button not found!');
+}
+
+// Mobile play button click
+if (mobilePlayBtn) {
+  mobilePlayBtn.addEventListener('click', () => {
+    console.log('📱 Mobile play button clicked');
+    if (youtubePlayer && youtubePlayer.playVideo) {
+      youtubePlayer.playVideo();
+      mobilePlayBtn.style.display = 'none';
+    }
+  });
 }
 
 // Show player
@@ -386,21 +403,6 @@ async function searchAndPlayYouTube(songName, artistName, startSeconds = 0) {
               if (youtubePlayer.playVideo) {
                 console.log('▶️ Playing video...');
                 youtubePlayer.playVideo();
-                
-                // On mobile, check if playback started after a delay
-                if (requiresUserInteraction) {
-                  console.log('📱 Mobile: Will check playback status in 2 seconds...');
-                  setTimeout(() => {
-                    const state = youtubePlayer.getPlayerState ? youtubePlayer.getPlayerState() : -1;
-                    console.log('📱 Player state:', state, '(1 = playing)');
-                    if (state !== 1) {
-                      console.log('📱 Not playing - showing tap button!');
-                      showMobileTapToPlay();
-                    } else {
-                      console.log('📱 Already playing - no button needed');
-                    }
-                  }, 2000);
-                }
               }
             }, 1500);
           }

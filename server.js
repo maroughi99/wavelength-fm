@@ -26,8 +26,8 @@ app.use(express.static('public'));
 // Serve API keys endpoint
 app.get('/api/config', (req, res) => {
   res.json({
-    lastfmApiKey: process.env.LASTFM_API_KEY || 'b25b959554ed76058ac220b7b2e0a026',
-    youtubeApiKey: process.env.YOUTUBE_API_KEY || 'AIzaSyBnmicuSYl06xG-F-i2NflWN71iUxWcU2A'
+    lastfmApiKey: process.env.LASTFM_API_KEY,
+    youtubeApiKey: process.env.YOUTUBE_API_KEY
   });
 });
 
