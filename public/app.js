@@ -27,6 +27,7 @@ let currentSongStartTime = null; // Track when current song started
 let pendingTrackSwitch = null; // Store next track to switch to
 let requiresUserInteraction = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent); // Mobile detection
 let hasUserInteracted = false;
+let videoCache = {}; // Cache YouTube video IDs to save API quota
 
 // Login button click
 if (loginBtn) {
@@ -215,6 +216,36 @@ function updateCurrentVideo(title) {
 
 // Search YouTube and play
 async function searchAndPlayYouTube(songName, artistName, startSeconds = 0) {
+  if (!songName || !artistName) {
+    console.error('Missing song or artist name');
+    return;
+  }
+  
+  const cacheKey = `${songName.toLowerCase()}-${artistName.toLowerCase()}`;
+  
+  // Check cache first to save API quota
+  if (videoCache[cacheKey]) {
+    console.log('💾 Using cached video for:', songName);
+    const cachedVideoId = videoCache[cacheKey];
+    
+    if (youtubePlayer && youtubePlayer.loadVideoById) {
+      console.log('📡 Loading cached video ID:', cachedVideoId);
+      youtubePlayer.loadVideoById({
+        videoId: cachedVideoId,
+        startSeconds: startSeconds
+      });
+      
+      setTimeout(() => {
+        if (youtubePlayer.playVideo) {
+          youtubePlayer.playVideo();
+        }
+      }, 1500);
+    }
+    return;
+  }
+  
+  console.log('🔍 Searching YouTube API for:', songName, 'by', artistName);
+  
   try {
     const searchStrategies = [
       `${artistName} ${songName} official audio`,
@@ -289,6 +320,10 @@ async function searchAndPlayYouTube(songName, artistName, startSeconds = 0) {
           console.log('✓ Selected:', videoTitle);
           console.log('  Channel:', videoChannel);
           console.log('  Score:', bestScore);
+          
+          // Cache the video ID to save API quota
+          videoCache[cacheKey] = videoId;
+          console.log('💾 Cached video ID for future use');
           
           updateCurrentVideo(videoTitle);
           
