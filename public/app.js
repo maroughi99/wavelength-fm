@@ -55,6 +55,19 @@ if (loginBtn) {
   loginBtn.addEventListener('click', () => {
     console.log('🎵 Start Listening button clicked!');
     hasUserInteracted = true;
+    
+    // For mobile: Immediately create and play a silent audio element to unlock audio context
+    if (requiresUserInteraction) {
+      console.log('📱 Mobile detected - unlocking audio context...');
+      const silentAudio = document.createElement('audio');
+      silentAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+      silentAudio.play().then(() => {
+        console.log('✅ Audio context unlocked for mobile');
+      }).catch(e => {
+        console.log('⚠️ Audio unlock failed:', e);
+      });
+    }
+    
     try {
       showDemoPlayer();
     } catch (error) {
@@ -372,11 +385,17 @@ async function searchAndPlayYouTube(songName, artistName, startSeconds = 0) {
             setTimeout(() => {
               if (youtubePlayer.playVideo) {
                 console.log('▶️ Playing video...');
-                youtubePlayer.playVideo().then(() => {
-                  console.log('✅ Playback started successfully');
-                }).catch(err => {
-                  console.log('⚠️ Autoplay blocked, will try on next user interaction');
-                });
+                const playPromise = youtubePlayer.playVideo();
+                if (playPromise && playPromise.then) {
+                  playPromise.then(() => {
+                    console.log('✅ Playback started successfully');
+                  }).catch(err => {
+                    console.log('⚠️ Autoplay blocked:', err);
+                    if (requiresUserInteraction) {
+                      showMobileTapToPlay();
+                    }
+                  });
+                }
               }
             }, 1500);
           }
