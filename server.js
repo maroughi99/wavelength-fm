@@ -27,7 +27,7 @@ app.use(express.static('public'));
 app.get('/api/config', (req, res) => {
   res.json({
     lastfmApiKey: process.env.LASTFM_API_KEY || 'b25b959554ed76058ac220b7b2e0a026',
-    youtubeApiKey: process.env.YOUTUBE_API_KEY || 'AIzaSyB6FhlAzbh21OvLAeM5D2G21jMv-rUT0b8'
+    youtubeApiKey: process.env.YOUTUBE_API_KEY || 'AIzaSyBnmicuSYl06xG-F-i2NflWN71iUxWcU2A'
   });
 });
 

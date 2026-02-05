@@ -29,6 +29,17 @@ let requiresUserInteraction = /iPhone|iPad|iPod|Android/i.test(navigator.userAge
 let hasUserInteracted = false;
 let videoCache = {}; // Cache YouTube video IDs to save API quota
 
+// Load cache from localStorage on startup
+try {
+  const savedCache = localStorage.getItem('wavelength-video-cache');
+  if (savedCache) {
+    videoCache = JSON.parse(savedCache);
+    console.log('📦 Loaded', Object.keys(videoCache).length, 'cached videos from storage');
+  }
+} catch (e) {
+  console.log('Could not load cache:', e);
+}
+
 // Fetch API keys from server
 fetch('/api/config')
   .then(res => res.json())
@@ -334,6 +345,13 @@ async function searchAndPlayYouTube(songName, artistName, startSeconds = 0) {
           // Cache the video ID to save API quota
           videoCache[cacheKey] = videoId;
           console.log('💾 Cached video ID for future use');
+          
+          // Save cache to localStorage
+          try {
+            localStorage.setItem('wavelength-video-cache', JSON.stringify(videoCache));
+          } catch (e) {
+            console.log('Could not save cache:', e);
+          }
           
           updateCurrentVideo(videoTitle);
           
