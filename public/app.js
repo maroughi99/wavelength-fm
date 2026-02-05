@@ -27,6 +27,7 @@ let currentSongStartTime = null; // Track when current song started
 let pendingTrackSwitch = null; // Store next track to switch to
 let requiresUserInteraction = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent); // Mobile detection
 let hasUserInteracted = false;
+let audioUnlocked = false; // Track if we've successfully unlocked audio
 let videoCache = {}; // Cache YouTube video IDs to save API quota
 
 // Load cache from localStorage on startup
@@ -82,8 +83,16 @@ if (loginBtn) {
 // Make album art clickable on mobile to start playback
 if (albumArt) {
   albumArt.addEventListener('click', () => {
-    if (requiresUserInteraction && youtubePlayer) {
-      console.log('📱 Album art tapped - attempting to play');
+    if (requiresUserInteraction && youtubePlayer && !audioUnlocked) {
+      console.log('📱 Album art tapped - unlocking audio and starting playback');
+      if (youtubePlayer.playVideo) {
+        youtubePlayer.playVideo();
+        audioUnlocked = true; // Mark audio as unlocked
+        console.log('✅ Audio unlocked - future songs will auto-play');
+      }
+    } else if (youtubePlayer && youtubePlayer.getPlayerState && youtubePlayer.getPlayerState() !== 1) {
+      // Fallback: if audio stopped for some reason, allow re-tap
+      console.log('📱 Album art tapped - restarting playback');
       if (youtubePlayer.playVideo) {
         youtubePlayer.playVideo();
       }
@@ -403,6 +412,11 @@ async function searchAndPlayYouTube(songName, artistName, startSeconds = 0) {
               if (youtubePlayer.playVideo) {
                 console.log('▶️ Playing video...');
                 youtubePlayer.playVideo();
+                
+                // Mark audio as unlocked after successful play on desktop
+                if (!requiresUserInteraction) {
+                  audioUnlocked = true;
+                }
               }
             }, 1500);
           }
