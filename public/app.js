@@ -387,11 +387,17 @@ async function searchAndPlayYouTube(songName, artistName, startSeconds = 0) {
                 console.log('▶️ Playing video...');
                 youtubePlayer.playVideo();
                 
-                // On mobile, always show tap button after a delay (in case autoplay failed)
+                // On mobile, check if playback started after a delay
                 if (requiresUserInteraction) {
+                  console.log('📱 Mobile: Will check playback status in 2 seconds...');
                   setTimeout(() => {
-                    if (youtubePlayer.getPlayerState() !== 1) { // Not playing
+                    const state = youtubePlayer.getPlayerState ? youtubePlayer.getPlayerState() : -1;
+                    console.log('📱 Player state:', state, '(1 = playing)');
+                    if (state !== 1) {
+                      console.log('📱 Not playing - showing tap button!');
                       showMobileTapToPlay();
+                    } else {
+                      console.log('📱 Already playing - no button needed');
                     }
                   }, 2000);
                 }
